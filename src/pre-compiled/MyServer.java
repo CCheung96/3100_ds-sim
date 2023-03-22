@@ -9,12 +9,10 @@ public static void main(String args[])throws Exception{
 	BufferedReader br=new BufferedReader(new InputStreamReader(s.getInputStream()));  
   
 	String str="",str2="";  
-	System.out.println("Welcome, Peasant.");
-	while(!str.equals("BYE")){  
-		str=din.readLine();  
+	while(!str.equals("stop")){  
+		str=din.readUTF();
 		System.out.println("client says: "+str);  
 		str2=br.readLine();  
-		System.out.println(str2);
 		dout.write(str2.getBytes());  
 		dout.flush();  
 	}  
