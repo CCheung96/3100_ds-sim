@@ -6,28 +6,17 @@ class MyClient{
 
 		DataInputStream din=new DataInputStream(s.getInputStream());  
 		DataOutputStream dout=new DataOutputStream(s.getOutputStream());  
-		BufferedReader br=new BufferedReader(new InputStreamReader(System.in));  
+		BufferedReader in=new BufferedReader(new InputStreamReader(s.getInputStream()));  
 
 		try{
 			String request = "";
 			String response = "";
 
-			dout.writeUTF("HELO");
+			dout.write("HELO\n".getBytes());
 			dout.flush();
-			response=din.readUTF();  
+			response=in.readLine();  
 			System.out.println("Server says: "+response);  
 
-			while(!response.equals("BYE")){  
-
-				if (response.equals("G'DAY"))
-				{
-					request = "BYE";
-					dout.writeUTF(request);  
-					dout.flush();  
-					response=din.readUTF();  
-					System.out.println("Server says: "+response);  
-				}
-			}  
 	} catch (Exception e){
 		e.printStackTrace();
 		//System.exit();
