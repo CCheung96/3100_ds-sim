@@ -1,6 +1,6 @@
 import java.net.*;
 import java.io.*;
-class MyClient4{
+class MyClient5{
 	public static void main(String args[])throws Exception{
 		Socket s=new Socket("localhost",50000);
 
@@ -9,8 +9,10 @@ class MyClient4{
 		BufferedReader in=new BufferedReader(new InputStreamReader(s.getInputStream()));  
 
 		try{
-			String request = "";
-			String response = "";
+			// String request = "";
+			// String response = "";
+			// String jobID = "";
+			String request, response, servCommand, jobID;
 
 			dout.write("HELO\n".getBytes());
 			dout.flush();
@@ -34,6 +36,12 @@ class MyClient4{
 			dout.flush();
 			response=in.readLine();  
 			System.out.println("Server says: "+response);  
+			String[] arrResponse = response.split(" ");
+
+			servCommand = arrResponse[0];
+			if(servCommand.equals("JOBN")){
+				jobID = arrResponse[2];
+			}
 
 			dout.write(("QUIT\n").getBytes());
 			dout.flush();
