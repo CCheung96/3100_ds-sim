@@ -34,6 +34,9 @@ class MyClient4{
 			dout.flush();
 			response=in.readLine();  
 			System.out.println("Server says: "+response);  
+			if(!response.equals("")){
+				System.out.println("Server not responding to REDY");
+			}
 
 			dout.write(("QUIT\n").getBytes());
 			dout.flush();
