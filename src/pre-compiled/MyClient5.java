@@ -17,7 +17,7 @@ class MyClient5 {
 			String request, response, servCommand, jobID;
 
 			// START HANDSHAKE
-			response = getResponse("HELO"); 
+			response = callResponse("HELO"); 
 			serverOutput(response);
 		
 			if(!response.equals("OK")){
@@ -25,17 +25,17 @@ class MyClient5 {
 			}
 
 			String username = System.getProperty("user.name");
-			response = getResponse("AUTH" + username); 
-			System.out.println("Server says: "+response);  
+			response = callResponse("AUTH" + username); 
+			serverOutput(response); 
+			
 			if(!response.equals("OK")){
 				System.out.println("Server not responding to AUTH");
 			}
 
 			// JOBN LOOP
 			 while(!response.equals("NONE")){
-				response = getResponse("REDY");
-				System.out.println("Server says: "+response);  
-				
+				response = callResponse("REDY");
+				serverOutput(response);	
 				// break loop if response == "NONE"
 				if(response.equals("NONE")){
 					break;
@@ -43,60 +43,63 @@ class MyClient5 {
 				
 				// store command and JobID
 				String[] arrResponse = response.split(" ");
+				if(!arrResponse[0].equals("JOBN")){
+					break;
+				}
 				servCommand = arrResponse[0];
 				jobID = arrResponse[2];
 
 				
-				response = getResponse("GETS All"); // returns DATA a b 
+				response = callResponse("GETS All"); // returns DATA nRecs recLen 
 				serverOutput(response);
-				arrResponse= response.split(" ");
-				// int nRecs = (int) arrResponse[1];
-				// int recLen = arrResponse[2];
+				String[] getsAll = response.split(" ");
+				Integer nRecs = Integer.valueOf(getsAll[1]);
+				// int recLen = getsAll[2];
 			
 				
 
 				dout.write(("OK\n").getBytes());
 				dout.flush();
 
-
-				String serverName = "";
+				String serverType = "";
 				int serverCores = 0;
 				for(int i = 0; i< nRecs; i++){
+					/*
+					 * Server State information is formatted in a single line
+					 * like so:
+					 * 
+					 * serverType serverID state curStartTime serverCores memory disk waitingJobs runningJobs
+					 */
 					response= in.readLine();
+					System.out.println(response);
+					if(response.equals(".")){break;}
 					String[] temp = response.split(" ");
+					// Keep track of the serverType with the largest serverCores
 					if(Integer.valueOf(temp[4]) > serverCores){
-						serverName = temp[0];
+						serverType = temp[0];
 						serverCores = Integer.valueOf(temp[4]);
 					}
 				}
-				
-				
 
+				response = callResponse("OK");
+				serverOutput(response);	//Should output "."
 
+				response = callResponse("SCHD "+ jobID + " " + serverType + " 0");
+				serverOutput(response); // Should output OK;
+			}
 
-				System.out.println("Server says: " + response);
+			response = callResponse("QUIT");
+			serverOutput(response);
 
-
-
-
-			dout.write(("QUIT\n").getBytes());
-			dout.flush();
-			response=in.readLine();  
-			System.out.println("Server says: "+response);  
-
-
-
-	} catch (Exception e){
-		e.printStackTrace();
-		//System.exit();
-	}
-
-
+		} catch (Exception e){
+			e.printStackTrace();
+			//System.exit();
+		}
 
 
 	}
 
-	public static String getResponse(String request) {
+	public static String callResponse(String request) {
 		try {
 			dout.write((request + "\n").getBytes());
 			dout.flush();
