@@ -7,6 +7,15 @@ class Stage1Client {
 	static DataOutputStream dout;
 	static BufferedReader in;
 
+	static String response; // reads each line sent from the server
+
+	// Initialise values for finding the best Server 
+	static String serverType = "";
+	static int serverCores = 0;
+	static int serverCount = 0;
+	
+
+
 	public static void main(String args[])throws Exception{
 		s=new Socket("localhost",50000);
 		din=new DataInputStream(s.getInputStream());  
@@ -14,7 +23,7 @@ class Stage1Client {
 		in=new BufferedReader(new InputStreamReader(s.getInputStream()));  
 
 		try{
-			String request, response, servCommand, jobID;
+			String servCommand, jobID;
 
 			// START HANDSHAKE
 			response = callResponse("HELO"); 
@@ -24,7 +33,7 @@ class Stage1Client {
 			response = callResponse("AUTH " + username); 
 			serverOutput(response); 
 			
-
+			Boolean bestServerFound = false; // Best server not yet found
 			// JOBN LOOP
 			 while(!response.equals("NONE")){
 				response = callResponse("REDY");
@@ -43,49 +52,18 @@ class Stage1Client {
 				jobID = arrResponse[2];
 
 				
-				response = callResponse("GETS All"); // returns DATA nRecs recLen 
-				serverOutput(response);
-				String[] getsAll = response.split(" ");
-				Integer nRecs = Integer.valueOf(getsAll[1]);
-				// int recLen = getsAll[2];
-			
+
+				if(bestServerFound.equals(false)){
+					System.out.println("Finding Best Server");
+					bestServerFound = findBestServer();
+				}
+				System.out.println("Best Server: " + serverType);
 				
 
-				dout.write(("OK\n").getBytes());
-				dout.flush();
-
-				String serverType = "";
-				int serverCores = 0;
-				int serverCount = 0;
-				for(int i = 0; i< nRecs; i++){
-					/*
-					 * Server State information is formatted in a single line
-					 * like so:
-					 * 
-					 * serverType serverID state curStartTime serverCores memory disk waitingJobs runningJobs
-					 */
-					response= in.readLine();
-					System.out.println(response);
-
-					if(response.equals(".")){break;}
-
-					String[] serverApp = response.split(" ");
-
-					if(serverApp[0].equals(serverType)){
-						serverCount++;
-					}
-					// Keep track of the serverType with the largest serverCores
-					if(Integer.valueOf(serverApp[4]) > serverCores){
-						serverType = serverApp[0];
-						serverCores = Integer.valueOf(serverApp[4]);
-						serverCount = 1;
-					}
-				}
-
-				response = callResponse("OK");
-				serverOutput(response);	//Should output "."
 				if (servCommand.equals("JOBN")){
+				
 					Integer serverID = Integer.valueOf(jobID) % serverCount;
+					System.out.println(jobID + ", " + serverCount + ", " + serverID);
 					response = callResponse("SCHD "+ jobID + " " + serverType + " " + serverID);
 					serverOutput(response); // Should output OK;
 				}
@@ -115,6 +93,51 @@ class Stage1Client {
 	}
 
 	public static void serverOutput(String response){
-		System.out.println("Server says: "+response);  
+		System.out.println("Server says: " + response);  
+	}
+
+	public static Boolean findBestServer(){
+		try {
+				response = callResponse("GETS All");
+				String[] getsAll = response.split(" ");
+				Integer nRecs = Integer.valueOf(getsAll[1]);
+
+				dout.write(("OK\n").getBytes());
+				dout.flush();
+				for(int i = 0; i< nRecs; i++){
+					/*
+					 * Server State information is formatted in a single line
+					 * like so:
+					 * 
+					 * serverType serverID state curStartTime serverCores memory disk waitingJobs runningJobs
+					 */
+					response= in.readLine();
+					System.out.println(response);
+
+					if(response.equals(".")){break;}
+
+					String[] serverApp = response.split(" ");
+
+					if(serverApp[0].equals(serverType)){
+						serverCount++;
+					}
+					// Keep track of the serverType with the largest serverCores
+					if(Integer.valueOf(serverApp[4]) > serverCores){
+						serverType = serverApp[0];
+						serverCores = Integer.valueOf(serverApp[4]);
+						serverCount = 1;
+					}
+				}
+
+				response = callResponse("OK");
+				serverOutput(response);	// Should output "."
+
+				return true;
+
+		} catch (Exception e) {
+			return false;
+		}
+			
+
 	}
 }
