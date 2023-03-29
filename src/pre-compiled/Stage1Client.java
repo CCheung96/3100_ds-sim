@@ -19,18 +19,11 @@ class Stage1Client {
 			// START HANDSHAKE
 			response = callResponse("HELO"); 
 			serverOutput(response);
-		
-			if(!response.equals("OK")){
-				System.out.println("Server not responding to HELO");
-			}
 
 			String username = System.getProperty("user.name");
-			response = callResponse("AUTH" + username); 
+			response = callResponse("AUTH " + username); 
 			serverOutput(response); 
 			
-			if(!response.equals("OK")){
-				System.out.println("Server not responding to AUTH");
-			}
 
 			// JOBN LOOP
 			 while(!response.equals("NONE")){
@@ -43,9 +36,9 @@ class Stage1Client {
 				
 				// store command and JobID
 				String[] arrResponse = response.split(" ");
-				if(!arrResponse[0].equals("JOBN")){
-					break;
-				}
+				// if(!arrResponse[0].equals("JOBN")){
+				// 	break;
+				// }
 				servCommand = arrResponse[0];
 				jobID = arrResponse[2];
 
@@ -63,6 +56,7 @@ class Stage1Client {
 
 				String serverType = "";
 				int serverCores = 0;
+				int serverCount = 0;
 				for(int i = 0; i< nRecs; i++){
 					/*
 					 * Server State information is formatted in a single line
@@ -72,20 +66,30 @@ class Stage1Client {
 					 */
 					response= in.readLine();
 					System.out.println(response);
+
 					if(response.equals(".")){break;}
-					String[] temp = response.split(" ");
+
+					String[] serverApp = response.split(" ");
+
+					if(serverApp[0].equals(serverType)){
+						serverCount++;
+					}
 					// Keep track of the serverType with the largest serverCores
-					if(Integer.valueOf(temp[4]) > serverCores){
-						serverType = temp[0];
-						serverCores = Integer.valueOf(temp[4]);
+					if(Integer.valueOf(serverApp[4]) > serverCores){
+						serverType = serverApp[0];
+						serverCores = Integer.valueOf(serverApp[4]);
+						serverCount = 1;
 					}
 				}
 
 				response = callResponse("OK");
 				serverOutput(response);	//Should output "."
+				if (servCommand.equals("JOBN")){
+					Integer serverID = Integer.valueOf(jobID) % serverCount;
+					response = callResponse("SCHD "+ jobID + " " + serverType + " " + serverID);
+					serverOutput(response); // Should output OK;
+				}
 
-				response = callResponse("SCHD "+ jobID + " " + serverType + " 0");
-				serverOutput(response); // Should output OK;
 			}
 
 			response = callResponse("QUIT");
