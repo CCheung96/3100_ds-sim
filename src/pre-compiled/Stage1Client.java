@@ -27,55 +27,50 @@ class Stage1Client {
 
 			// START HANDSHAKE
 			response = callResponse("HELO"); 
-			serverOutput(response);
+			// serverOutput(response);
 
 			String username = System.getProperty("user.name");
 			response = callResponse("AUTH " + username); 
-			serverOutput(response); 
+			// serverOutput(response); 
 			
 			Boolean bestServerFound = false; // Best server not yet found
 			// JOBN LOOP
 			 while(!response.equals("NONE")){
 				response = callResponse("REDY");
-				serverOutput(response);	
+				// serverOutput(response);	
 				// break loop if response == "NONE"
 				if(response.equals("NONE")){
 					break;
 				}
 				
-				// store command and JobID
+				// store command and jobID
 				String[] arrResponse = response.split(" ");
-				// if(!arrResponse[0].equals("JOBN")){
-				// 	break;
-				// }
 				servCommand = arrResponse[0];
 				jobID = arrResponse[2];
 
 				
 
 				if(bestServerFound.equals(false)){
-					System.out.println("Finding Best Server");
+					// System.out.println("Finding Best Server");
 					bestServerFound = findBestServer();
 				}
-				System.out.println("Best Server: " + serverType);
+				// System.out.println("Best Server: " + serverType);
 				
 
 				if (servCommand.equals("JOBN")){
 				
 					Integer serverID = Integer.valueOf(jobID) % serverCount;
-					System.out.println(jobID + ", " + serverCount + ", " + serverID);
 					response = callResponse("SCHD "+ jobID + " " + serverType + " " + serverID);
-					serverOutput(response); // Should output OK;
+					// serverOutput(response); // Should output OK;
 				}
 
 			}
 
 			response = callResponse("QUIT");
-			serverOutput(response);
+			// serverOutput(response);
 
 		} catch (Exception e){
 			e.printStackTrace();
-			//System.exit();
 		}
 
 
@@ -92,9 +87,9 @@ class Stage1Client {
 		return "";
 	}
 
-	public static void serverOutput(String response){
-		System.out.println("Server says: " + response);  
-	}
+	// public static void serverOutput(String response){
+	// 	System.out.println("Server says: " + response);  
+	// }
 
 	public static Boolean findBestServer(){
 		try {
@@ -112,7 +107,7 @@ class Stage1Client {
 					 * serverType serverID state curStartTime serverCores memory disk waitingJobs runningJobs
 					 */
 					response= in.readLine();
-					System.out.println(response);
+					// System.out.println(response);
 
 					if(response.equals(".")){break;}
 
@@ -130,11 +125,12 @@ class Stage1Client {
 				}
 
 				response = callResponse("OK");
-				serverOutput(response);	// Should output "."
+				// serverOutput(response);	// Should output "."
 
 				return true;
 
 		} catch (Exception e) {
+			System.out.println("Exception: " + e.getMessage());
 			return false;
 		}
 			
