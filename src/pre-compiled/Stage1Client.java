@@ -2,13 +2,16 @@ import java.net.*;
 import java.io.*;
 
 class Stage1Client {
+	// Variables relating to the input-output connection from the Client 
+	// to the Server
 	static Socket s;
 	static DataOutputStream dout;
 	static BufferedReader in;
+	
+	// Variable for temporarily storeing messages from server
+	static String response; 
 
-	static String response; // Temporarily stores messages from server
-
-	// Initialise values for storing details of the "best" server 
+	// Variables for storing details of the "best" server 
 	static String serverType = "";
 	static int serverCores = 0;
 	static int serverCount = 0;
@@ -16,46 +19,55 @@ class Stage1Client {
 
 
 	public static void main(String args[])throws Exception{
+		// Connection configurations initialised
 		s=new Socket("localhost",50000);
 		dout=new DataOutputStream(s.getOutputStream());  
 		in=new BufferedReader(new InputStreamReader(s.getInputStream()));  
 
 		try{
-			String servCommand, jobID;
+			// Variables for scheduling
+			String servCommand, jobID=null;
 
-			// START HANDSHAKE:
-			// HELO
+			/*
+			 * The Handshake Sequence
+			 */
 			response = callResponse("HELO"); 
-			// AUTH crystal
 			String username = System.getProperty("user.name");
 			response = callResponse("AUTH " + username); 
-			
-			Boolean bestServerFound = false; // Best server not yet found
 
-			// JOBN LOOP
+			// Variable to confirm whether best server has been found
+			Boolean bestServerFound = false; 
+
+			/*
+			 * While Not "NONE" Loop:
+			 * 
+			 * Loop where most of the work is done. Job creation and scheduling 
+			 * takes place here. The Loop exits once the server indicates there 
+			 * are no more jobs to deal with.
+			 */
 			 while(!response.equals("NONE")){
 				response = callResponse("REDY");
-				// Break loop if response indicates no more jobs to schedule or 
-				// complete
-				if(response.equals("NONE")){
-					break;
-				}
-				
-				// Store command and jobID
+
+				/*
+				 * Store command (and jobID if command is JOBN)
+				 */
 				String[] responseArr = response.split(" ");
 				servCommand = responseArr[0];
-				jobID = responseArr[2];
+				if(servCommand.equals("JOBN")){
+					jobID = responseArr[2];
+				}
 
-				
 				/*
 				 * Run unless "best" server has already been found. 
-				 * bestServerFound set to true if function runs succesfully.
+				 * bestServerFound will set to true if function runs succesfully 
+				 * once. Afterwards, the function will not be called again.
 				 */
 				if(bestServerFound.equals(false)){
 					bestServerFound = findBestServer(); 
 				}
-				
-				// Schedule job if stored command was "JOBN"
+				/* 
+				 * Schedule job if stored command was "JOBN"
+				 */
 				if (servCommand.equals("JOBN")){
 					Integer serverID = Integer.valueOf(jobID) % serverCount;
 					response = callResponse("SCHD "+ jobID + " " + serverType + 
@@ -63,7 +75,9 @@ class Stage1Client {
 				}
 			}
 
-			// Initiate QUIT sequence
+			/*
+			 * Initiate QUIT sequence
+			 */
 			response = callResponse("QUIT");
 		} catch (Exception e){
 			e.printStackTrace();
@@ -118,7 +132,7 @@ class Stage1Client {
 					response= in.readLine();
 					
 					// Exit the for loop if "." is encountered rather than 
-					// server information
+					// server information.
 					if(response.equals(".")){break;}
 
 					String[] recordArr = response.split(" ");

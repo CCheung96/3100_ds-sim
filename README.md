@@ -12,3 +12,8 @@ ds-sim is a discrete-event simulator that has been developed primarily for lever
 
 `$ ds-client -a bf`
 
+## Important Files
+Stage 1 Client java file: src/pre-compiled/Stage1Client.java 
+Stage 1 Client class file: src/pre-compiled/Stage1Client.class
+ds-client test logs: assg1/stage1/reference\_output/ 
+Stage 1 Client test logs: assg1/stage1/client\_output/ 
