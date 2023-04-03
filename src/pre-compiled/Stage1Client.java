@@ -8,7 +8,7 @@ class Stage1Client {
 	static DataOutputStream dout;
 	static BufferedReader in;
 	
-	// Variable for temporarily storeing messages from server
+	// Variable for temporarily storing messages from server
 	static String response; 
 
 	// Variables for storing details of the "best" server 
@@ -116,8 +116,8 @@ class Stage1Client {
 	public static Boolean findBestServer(){
 		try {
 				response = callResponse("GETS All");
-				String[] getsAll = response.split(" ");
-				Integer nRecs = Integer.valueOf(getsAll[1]);
+				String[] dataArr = response.split(" ");
+				Integer nRecs = Integer.valueOf(dataArr[1]);
 
 				dout.write(("OK\n").getBytes());
 				dout.flush();
