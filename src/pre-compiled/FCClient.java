@@ -1,7 +1,7 @@
 import java.net.*;
 import java.io.*;
 
-class Stage1Client {
+class FCClient {
 	// Variables relating to the input-output connection from the Client 
 	// to the Server
 	static Socket s;
@@ -13,8 +13,8 @@ class Stage1Client {
 
 	// Variables for storing details of the "best" server 
 	static String serverType = "";
-	static int serverCores = 0;
-	static int serverCount = 0;
+	static String capable;
+	static int serverID = 0;
 	
 
 
@@ -35,9 +35,6 @@ class Stage1Client {
 			String username = System.getProperty("user.name");
 			response = callResponse("AUTH " + username); 
 
-			// Variable to confirm whether best server has been found
-			Boolean bestServerFound = false; 
-
 			/*
 			 * While Not "NONE" Loop:
 			 * 
@@ -53,26 +50,16 @@ class Stage1Client {
 				 */
 				String[] responseArr = response.split(" ");
 				servCommand = responseArr[0];
+
+				
 				if(servCommand.equals("JOBN")){
 					jobID = responseArr[2];
-				}
-
-				/*
-				 * Run unless "best" server has already been found. 
-				 * bestServerFound will set to true if function runs succesfully 
-				 * once. Afterwards, the function will not be called again.
-				 */
-				if (bestServerFound == false){
-					bestServerFound = findBestServer(); 
-				}
-				/* 
-				 * Schedule job if stored command was "JOBN"
-				 */
-				if (servCommand.equals("JOBN")){
-					Integer serverID = Integer.valueOf(jobID) % serverCount;
+					capable = responseArr[4] + " " + responseArr[5] + " " + 
+						responseArr[6];
+					findBestServer();
 					response = callResponse("SCHD "+ jobID + " " + serverType + 
-						" " + serverID);
-				}
+						" " + serverID); 
+				}	
 			}
 
 			/*
@@ -113,54 +100,29 @@ class Stage1Client {
 	 * @return : confirmation of whether the search for the "best server" has 
 	 * suceeded (or failed due to an exception interrupt)
 	 ***/
-	public static Boolean findBestServer(){
+	public static void findBestServer(){
 		try {
-				response = callResponse("GETS All");
+				// Send GETS Capable to the server
+				response = callResponse("GETS Capable " + capable);
 				String[] dataArr = response.split(" ");
 				Integer nRecs = Integer.valueOf(dataArr[1]); 
 
-				dout.write(("OK\n").getBytes());
-				dout.flush();
-				for(int i = 0; i< nRecs; i++){
-					/*
-					 * Server State information stored in response is formatted 
-					 * in a single line like so:
-					 * 
-					 * serverType serverID state curStartTime serverCores memory
-					 * disk waitingJobs runningJobs
-					 */
-					response= in.readLine();
+				// Store the serverType and serverID of the first record 
+				response = callResponse("OK");
+				String[] recordArr = response.split(" ");
+				serverType = recordArr[0];
+				serverID = Integer.valueOf(recordArr[1]);
 					
-					// Exit the for loop if "." is encountered rather than 
-					// server information.
-					if(response.equals(".")){break;}
 
-					String[] recordArr = response.split(" ");
-
-					// Increase the counter if the server is the same server 
-					// type as the biggest server type 
-					if(recordArr[0].equals(serverType)){
-						serverCount++;
-					}
-					// Keep track of the serverType with the largest serverCores
-					// and reset the server count
-					if(Integer.valueOf(recordArr[4]) > serverCores){
-						serverType = recordArr[0];
-						serverCores = Integer.valueOf(recordArr[4]);
-						serverCount = 1;
-					}
+				// Read in rest of the records
+				for(int i = 0; i< nRecs - 1; i++){
+					response= in.readLine();
 				}
 
 				// Acknowledgement that all server information is received
 				response = callResponse("OK");
-				// Best server has been found, so set bestServerFound to true
-				return true; 
-
 		} catch (Exception e) {
 			System.out.println("Exception: " + e.getMessage());
 		}
-		// Best server has not been succesfully found, so bestServerFound 
-		// should remain false
-		return false; 
 	}
 }
